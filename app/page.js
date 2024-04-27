@@ -75,6 +75,13 @@ function MeterLineChart() {
     }
 
     function updateChart2(json, chartSetUp) {
+        // Index dates in json for efficiency
+        for(let entry of json) {
+            entry["start"] = DateTime.fromSQL(entry["start"]);
+            entry["end"] = DateTime.fromSQL(entry["end"]);
+        }
+        // Much fastern now than parsing every time, especially during filtering
+
         if (chartCreated.current == null) {
             return;
         }
@@ -97,8 +104,8 @@ function MeterLineChart() {
         function accumulateElementsTime(elements) {
             let accumulated = Duration.fromMillis(0);
             for (let element of elements) {
-                let start = DateTime.fromSQL(element["start"]);
-                let end = DateTime.fromSQL(element["end"]);
+                let start = element["start"];
+                let end = element["end"];
                 accumulated = accumulated.plus(end.diff(start));
             }
             return accumulated;
@@ -114,8 +121,8 @@ function MeterLineChart() {
         dates.sort()
 
         // Get all dates between range
-        let current = DateTime.fromSQL(dates[0]);
-        let end = DateTime.fromSQL(dates[dates.length - 1]);
+        let current = dates[0];
+        let end = dates[dates.length - 1];
         let labels = [current.setLocale("sv").toLocaleString(DateTime.DATETIME_MED)];  // First current is first date
         let dates2 = [current]
         let interval = {};
@@ -152,9 +159,9 @@ function MeterLineChart() {
             let previousDate = DateTime.fromSQL("2000-00-00 00:00:00");
             for(let date of dates2) {
                 let elements = json.filter(element => (
-                    DateTime.fromSQL(element["end"]) > previousDate
-                    && DateTime.fromSQL(element["end"]) <= date
-                    && element["meter"] == meter
+                    element["meter"] == meter
+                    && element["end"] > previousDate
+                    && element["end"] <= date
                 ));
                 previousDate = date;
                 if (elements === undefined) {
