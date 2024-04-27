@@ -82,59 +82,48 @@ function LiveMeters() {
 
 function MeterLineChart() {
     const [toDate, setToDate] = useState((new Date()).toISOString().split("T")[0]);
-    const [fromDate, setFromDate] = useState(DateTime.now().minus({days: 7}).toISODate());
+    const [fromDate, setFromDate] = useState(DateTime.now().minus({days: 6}).toISODate());
     const chartSetUp = useRef(false);
 
     const [viewType, setViewType] = useState("averaged");
 
+    const [json, setJson] = useState([])
 
-    function updateChart() {
-        fetch("https://forbrug.ibk.dk/senders/electricity.php", {
+    async function getData() {
+        const response = await fetch("https://forbrug.ibk.dk/senders/electricity.php", {
             method: "POST",
             body: JSON.stringify({
                 "start": fromDate,
                 "end": toDate,
             }),
-        })
-            .then((res) => res.json())
-            .then((json) => updateChart2(json, chartSetUp));
-    }
+        });
+        let responseJson = await response.json();
 
-    function updateChart2(json, chartSetUp) {
         // Index dates in json for efficiency
-        for(let entry of json) {
+        for(let entry of responseJson) {
             entry["start"] = DateTime.fromSQL(entry["start"]);
             entry["end"] = DateTime.fromSQL(entry["end"]);
         }
         // Much fastern now than parsing every time, especially during filtering
 
-        if (chartCreated.current == null) {
+        setJson(responseJson);
+    }
+
+    useEffect(() => {
+        getData();
+    }, [fromDate, toDate]);
+
+    useEffect(() => {
+        if(json.length == 0) {
             return;
         }
+        updateChart2();
+    }, [json, viewType]);
 
-        function accumulateElements(elements) {
-            let accumulated = 0;
-            for (let element of elements) {
-                if (parseFloat(element["kwh"]) == 0) {
-                    console.log("fuck")
-                }
-                accumulated += parseFloat(element["kwh"]);
-            }
-            return accumulated;
-        }
+    function updateChart2() {
 
-        function averageElements(elements) {
-            return accumulateElements(elements) / elements.length;
-        }
-
-        function accumulateElementsTime(elements) {
-            let accumulated = Duration.fromMillis(0);
-            for (let element of elements) {
-                let start = element["start"];
-                let end = element["end"];
-                accumulated = accumulated.plus(end.diff(start));
-            }
-            return accumulated;
+        if (chartCreated.current == null) {
+            return;
         }
 
         // Get unique dates
@@ -272,8 +261,6 @@ function MeterLineChart() {
         }
     });
 
-    updateChart()
-
     return (
         <div className="mt-4">
             <div style={{height: "400px"}}>
@@ -346,4 +333,39 @@ function LiveMeter({data, meter, title}) {
             </span>
         </div>
     );
+}
+
+
+
+
+
+
+// For handling meter data
+//
+//
+
+
+function accumulateElements(elements) {
+    let accumulated = 0;
+    for (let element of elements) {
+        if (parseFloat(element["kwh"]) == 0) {
+            console.log("fuck")
+        }
+        accumulated += parseFloat(element["kwh"]);
+    }
+    return accumulated;
+}
+
+function averageElements(elements) {
+    return accumulateElements(elements) / elements.length;
+}
+
+function accumulateElementsTime(elements) {
+    let accumulated = Duration.fromMillis(0);
+    for (let element of elements) {
+        let start = element["start"];
+        let end = element["end"];
+        accumulated = accumulated.plus(end.diff(start));
+    }
+    return accumulated;
 }
