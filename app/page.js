@@ -15,9 +15,35 @@ export default function Home() {
         // </main>    
         <div className="container">
             <LiveMeters />
+            <Announcements />
             <MeterLineChart />
         </div>
     )
+}
+
+function Announcements() {
+    const [announcements, setAnnouncements] = useState([]);
+
+
+    async function getData() {
+        let response = await fetch("./announcements.json", {
+            method: "GET"
+        });
+        let json = await response.json()
+        setAnnouncements(json);
+    };
+
+    useEffect(() => {
+        getData();
+    }, []);
+
+    return <div className="mt-2">
+        {announcements.map((announcement, index) => {
+            return <div className="alert alert-primary" role="alert" key={index}>
+                {announcement}
+            </div>
+        })}
+    </div> 
 }
 
 function LiveMeters() {
@@ -267,7 +293,7 @@ function MeterLineChart() {
                     </div>
                 </div>
             </div>
-            <div className="btn-group" role="group" aria-label="Basic radio toggle button group">
+            <div className="btn-group mt-3" role="group" aria-label="Basic radio toggle button group">
                 <input type="radio" className="btn-check" name="btnradio" id="btnradio1" autoComplete="off" checked={viewType == "averaged"} onChange={() => setViewType("averaged")} />
                 <label className="btn btn-outline-primary" htmlFor="btnradio1">Average</label>
                 
