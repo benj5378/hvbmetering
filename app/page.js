@@ -157,6 +157,7 @@ function MeterLineChart() {
         let values = {"5": [], "6": []};
         for(let meter in values) {
             let previousDate = DateTime.fromSQL("2000-00-00 00:00:00");
+            let previouskwh = 0;
             for(let date of dates2) {
                 let elements = json.filter(element => (
                     element["meter"] == meter
@@ -174,11 +175,13 @@ function MeterLineChart() {
                     values[meter].push(kWh * 1000 / time.as("hours"));
                 }
                 else {
-                    let previouskwh = values[meter].at(-1);
-                    if (previouskwh == undefined) {
-                        previouskwh = 0;
+                    // Avoid points at missing data. To do: convert chart to scatter plot
+                    if (elements.length == 0) {
+                        values[meter].push(NaN);
+                        continue;
                     }
                     values[meter].push(previouskwh + kWh);
+                    previouskwh = previouskwh + kWh;
                 }
             }
         }
