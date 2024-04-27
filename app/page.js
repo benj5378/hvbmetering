@@ -6,7 +6,7 @@
 import "bootstrap/dist/css/bootstrap.css"
 import { Chart, registerables } from "chart.js"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef, useId } from "react"
 const { DateTime, Duration } = require("luxon");
 
 export default function Home() {
@@ -295,8 +295,81 @@ function MeterLineChart() {
                     {/*<button className="btn btn-primary" onClick={updateChart()}>Update</button>*/}
                 </div>
             </div>
+            <div className="row mt-3">
+                <h2>Analysis of chosen period</h2>
+                <Analysis className="col-md" json={json} meter={5} name="Vognhal" />
+                <Analysis className="col-md" json={json} meter={6} name="Kiosk" />
+            </div>
         </div>
     )
+}
+
+function Analysis({className, json, meter, name}) {
+    const chartCreated = useRef()
+    const weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+    const chartId = useId();
+
+    useEffect(() => {
+        if(chartCreated.current == null) {
+            console.log("SETUP");
+            const ctx = document.getElementById(chartId);
+            console.log(ctx);
+            Chart.register(...registerables);
+            chartCreated.current = "asd"
+            chartCreated.current = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: weekdays,
+                    datasets: [
+                        {
+                            data: [0.1, 0.2],
+                        }
+                    ]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: name
+                        },
+                        subtitle: {
+                            display: true,
+                            text: "kilowatt-hours"
+                        }
+                    }
+                }
+            });
+        }
+    }, []);
+
+    useEffect(() => {
+        if(json.length == 0) {
+            return;
+        }
+
+        let values = []
+        for(let i = 1; i <= weekdays.length; i++) {
+            let filtered = json.filter((element) => (
+                element["meter"] == meter &&
+                element["start"].weekday == i
+            ));
+            let kwh = accumulateElements(filtered);
+            values.push(kwh)
+        }
+        console.log(values)
+        chartCreated.current.data.datasets[0].data = values;
+        chartCreated.current.update();
+    }, [json])
+
+    return (
+        <div className={className} style={{height: "400px"}}>
+            <canvas id={chartId}></canvas>
+        </div>
+    );
 }
 
 
