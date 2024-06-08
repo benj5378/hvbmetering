@@ -26,13 +26,20 @@ def connectToInternet():
     global selfIp
     global nic
     nic.active(True)
+    utime.sleep(2)
+    nic.disconnect()
+    utime.sleep(2)
     while not nic.isconnected():
         #print("tryign")
         try:
-            nic.connect("Hedelands Veteranbane", "")
-        except Exception:
+            nic.connect("Hedelands Veteranbane", "3WY6D5FYH3M8R")
+        except Exception as e:
+            print(e)
+            print("Status: " + str(nic.status()))
             utime.sleep(5)
             continue
+    while nic.ifconfig()[0] == "0.0.0.0":
+        utime.sleep(5)
     utime.sleep(5)
     selfIp = nic.ifconfig()[0]
     print("Ip: " + selfIp)
