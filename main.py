@@ -10,6 +10,7 @@ import socket
 import gc
 import io
 import os
+import json
 # import ssl
 
 blueLED = Pin(45, Pin.OUT)
@@ -85,18 +86,37 @@ def blink():
     blueLED.value(1)  # Off
 
 
+def toHours(ms):
+    return ms / 1000 / 60 / 60
+
+
+def getKWDuration(duration):
+    #      kwhpercount * count / hours = kw
+    return kwhpercount * 1 / toHours(duration)
+
+def getKWtimestampOfLastCount(timestampOfLastCount):
+    duration = utime.ticks_diff(utime.ticks_ms(), timestampOfLastCount)
+    return getKWDuration(duration)
+
+def getKWmeter(meter):
+    a = getKWDuration(meter["lastDuration"])
+    b = getKWtimestampOfLastCount(meter["timestampOfLastCount"])
+    if a > b:
+        return b
+    elif b >= a:
+        return a
+
+
 def counting(meter):
     countPin = Pin(meter["pin"], Pin.IN, Pin.PULL_DOWN)
     justCounted = False
-    lastTime = utime.ticks_ms()
     while True:
         utime.sleep(0.03)
         if countPin.value() == 1 and not justCounted:
             meter["count"] = meter["count"] + 1
-            duration = utime.ticks_diff(utime.ticks_ms(), lastTime)
-            #                kwhpercount * count * hours = kw
-            meter["kW"] = kwhpercount * 1 / (duration / 1000 / 60 / 60)
-            lastTime = utime.ticks_ms()
+            duration = utime.ticks_diff(utime.ticks_ms(), meter["timestampOfLastCount"])
+            meter["lastDuration"] = duration
+            meter["timestampOfLastCount"] = utime.ticks_ms()
             justCounted = True
             #print(f"Meter pin {meter["pin"]}: count {meter["count"]}, duration {duration / 1000} s, {meter["kW"]} kW")
             _thread.start_new_thread(blink, ())
@@ -120,12 +140,12 @@ def serverListener():
             conn.settimeout(1)
             conn.recv(1024)
             conn.send("HTTP/1.1 200 OK\n")
+            conn.send("Access-Control-Allow-Origin: *\n")
             conn.send("Cache-Control: no-store\n\n")
-            json = "[\n"
+            data = []
             for meter in meters:
-                json = json + f'    {{"meter": {meter["pin"]}, "kW": {meter["kW"]}}},\n'
-            json = json + "]"
-            conn.send(json)
+                data.append({"meter": meter["pin"], "kW": getKWmeter(meter)})
+            conn.send(json.dumps(data))
             conn.close()
         except Exception as e:
             #print(e)
@@ -166,7 +186,7 @@ redLED.value(1)  # Off
 
 for meter in meters:
     meter["count"] = 0
-    meter["kW"] = 0
+    meter["timestampOfLastCount"] = utime.ticks_ms()
     _thread.start_new_thread(counting, (meter,))
 
 
