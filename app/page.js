@@ -171,17 +171,20 @@ function MeterLineChart() {
         else if (diffDays < 5) {
             interval = { hour: 1 };
         }
-        else if (diffDays < 7) {
+        else if (diffDays < 8) {
             interval = { hour: 1, minutes: 30 };
         }
-        else if (diffDays < 10) {
+        else if (diffDays < 12) {
+            interval = { hour: 2 };
+        }
+        else if (diffDays < 20) {
             interval = { hour: 3 };
         }
-        else if (diffDays < 25) {
+        else if (diffDays < 40) {
             interval = { hour: 6 };
         }
         else {
-            interval = { days: 1 };
+            interval = { day: 1 };
         }
 
         while(current < end) {
@@ -275,7 +278,7 @@ function MeterLineChart() {
             }
             console.log(chartCreated.current.isDatasetVisible(i))
                                                            // Will return false as no sets has been given yet.
-                                                           // Therefore, only use isDatasetVisible af first set up
+                                                                  // Therefore, only use isDatasetVisible af first set up
             return {...dataset, hidden: !chartCreated.current.isDatasetVisible(i)};
         })
 
