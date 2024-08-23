@@ -1,8 +1,9 @@
-// import Image from 'next/image'
-// import styles from './page.module.css'
-
 "use client";
 
+import Image from 'next/image'
+// import styles from './page.module.css'
+
+import { headers } from "@/next.config";
 import "bootstrap/dist/css/bootstrap.css"
 import { Chart, registerables } from "chart.js"
 
@@ -48,34 +49,52 @@ function Announcements() {
 
 function LiveMeters() {
     const [data, setData] = useState([]);
+    const [config, setConfig] = useState([]);
 
-    function getData() {
-        fetch("https://bug-pleasant-briefly.ngrok-free.app", {headers: {"ngrok-skip-browser-warning": "62940"}})
-            .then((res) => res.text())
-            .then((text) => {
-                let pos = text.lastIndexOf(",");
-                return text.slice(0, pos) + text.slice(pos + 1, text.length);
-            })
-            .then((jsonString) => {
-                setData(JSON.parse(jsonString));
-            });
+    async function getConfig() {
+        let response = await fetch("./config.json", {
+            method: "GET"
+        });
+        let json = await response.json();
+        await setConfig(json)
+    }
+
+    async function getData() {
+        // const opts = {
+        //     headers: {
+        //         // "ngrok-skip-browser-warning": "62940"
+        //     }
+        // }
+        for(const meter of config) {
+            if("url" in meter) {
+                fetch(meter["url"])
+                .then((res) => res.text())
+                .then((jsonString) => {
+                    setData((old) => updateOrAdd(old, JSON.parse(jsonString)))
+                });
+            }
+        }
     }
 
     useEffect(() => {
+        getConfig();
         const interval = setInterval(() => {
             getData();
-        }, 2300);
+        }, 900);
         return () => clearInterval(interval);
-    }, []);
+    }, [config, data]);
 
     return (
         <div className="row mt-4">
-            <div className="col-12 col-sm-6">
-                <LiveMeter data={data} meter={5} title="vognhal" />
-            </div>
-            <div className="col-12 col-sm-6">
-                <LiveMeter data={data} meter={6} title="kiosk" />
-            </div>
+            {
+                config.map(function (element) {
+                    return (
+                        <div className="col-md" key={"meter" + element["meter"]}>
+                            <LiveMeter data={data} meter={element["meter"]} title={element["name"]} />
+                        </div>
+                    )
+                })
+            }
         </div>
     )
 }
@@ -404,6 +423,9 @@ function LiveMeter({data, meter, title}) {
             <span style={{borderLeft: `0.3em solid ${seriousness}`, fontSize: "40px", paddingLeft: "10px"}}>
                 {wattage} watts
             </span>
+            {
+                wattage > 4000 && <img src="5Mz4.gif" style={{height: "160px", position: "absolute", transform: "translate(20px, -75px)"}} />
+            }
         </div>
     );
 }

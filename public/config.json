@@ -1,0 +1,16 @@
+[
+    {
+        "name": "Vognhal",
+        "meter": 5,
+        "url": "http://192.168.1.50:11500"
+    },
+    {
+        "name": "Kiosk",
+        "meter": 6
+    },
+    {
+        "name": "Hedelands Veteranbane",
+        "meter": 3,
+        "url": "http://192.168.1.54:11500"
+    }
+]
