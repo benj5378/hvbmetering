@@ -161,7 +161,6 @@ function MeterLineChart() {
         let dates2 = [current]
         let interval = {};
         const diffDays = end.diff(current, "days").as("days")
-        console.log(diffDays)
         if (diffDays < 2) {
             interval = { minutes: 15 };
         }
@@ -226,14 +225,6 @@ function MeterLineChart() {
             }
         }
 
-        chartCreated.current.data.datasets = chartCreated.current.data.datasets.map((dataset, i) => {
-            console.log(dataset)
-            console.log(chartCreated.current.isDatasetVisible(i))
-                                                          // Will return false as no sets has been given yet.
-                                                          // Therefore, only use isDatasetVisible af first set up
-            return {...dataset, hidden: !chartCreated.current.isDatasetVisible(i)};
-        })
-
         chartCreated.current.data.labels = labels;
         let nextDataset = [
             {
@@ -276,8 +267,7 @@ function MeterLineChart() {
             if(!chartSetUp.current) {
                 return dataset;
             }
-            console.log(chartCreated.current.isDatasetVisible(i))
-                                                           // Will return false as no sets has been given yet.
+                                                                  // Will return false as no sets has been given yet.
                                                                   // Therefore, only use isDatasetVisible af first set up
             return {...dataset, hidden: !chartCreated.current.isDatasetVisible(i)};
         })
@@ -298,6 +288,23 @@ function MeterLineChart() {
     }
 
     let chartCreated = useRef(null);
+
+
+    function forward() {
+        let d1 = DateTime.fromISO(fromDate)
+        let d2 = DateTime.fromISO(toDate)
+        let diff = d2.diff(d1, ["days"]);
+        setFromDate(d2.plus({days: 1}).toISODate());
+        setToDate(d2.plus({days: 1}).plus(diff).toISODate());
+    }
+
+    function backward() {
+        let d1 = DateTime.fromISO(fromDate)
+        let d2 = DateTime.fromISO(toDate)
+        let diff = d2.diff(d1, ["days"]);
+        setFromDate(d1.minus({days: 1}).minus(diff).toISODate());
+        setToDate(d1.minus({days: 1}).toISODate());
+    }
 
     useEffect(() => {
         if (!chartCreated.current) {
@@ -358,6 +365,11 @@ function MeterLineChart() {
                 <input type="radio" className="btn-check" name="btnradio" id="btnradio3" autoComplete="off" checked={viewType == "accumulated"} onChange={() => setViewType("accumulated")} />
                 <label className="btn btn-outline-primary" htmlFor="btnradio3">Accumulate</label>
             </div>
+            <div className="btn-group mt-3 ms-3">
+                <button className="btn btn-primary" onClick={backward}>Backward</button>
+                <button className="btn btn-primary" onClick={forward}>Forward</button>
+            </div>
+
             <div className="row mt-2">
                 <div className="">
                     {/*<button className="btn btn-primary" onClick={updateChart()}>Update</button>*/}
@@ -429,7 +441,6 @@ function Analysis({className, json, meter, name}) {
             let kwh = accumulateElements(filtered);
             values.push(kwh)
         }
-        console.log(values)
         chartCreated.current.data.datasets[0].data = values;
         chartCreated.current.update();
     }, [json])
