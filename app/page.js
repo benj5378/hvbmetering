@@ -223,8 +223,16 @@ function MeterLineChart() {
             }
         }
 
+        chartCreated.current.data.datasets = chartCreated.current.data.datasets.map((dataset, i) => {
+            console.log(dataset)
+            console.log(chartCreated.current.isDatasetVisible(i))
+                                                          // Will return false as no sets has been given yet.
+                                                          // Therefore, only use isDatasetVisible af first set up
+            return {...dataset, hidden: !chartCreated.current.isDatasetVisible(i)};
+        })
+
         chartCreated.current.data.labels = labels;
-        chartCreated.current.data.datasets = [
+        let nextDataset = [
             {
                 label: "Vognhal",
                 data: values["5"],
@@ -244,22 +252,33 @@ function MeterLineChart() {
                 label: "Stald/ridehal?",
                 data: values["1"],
                 borderWidth: 1,
-                hidden: true,
             },
             {
                 label: "Snedkerværksted/rytterstue??",
                 data: values["2"],
                 borderWidth: 1,
-                hidden: true,
             },
             {
-                label: "Høje Taastrup Kommune",
+                label: "Høje-Taastrup Kommune",
                 data: values["4"],
                 borderWidth: 1,
-                hidden: true,
             },
         ];
         
+        let prehiddenDatasets = ["Stald/ridehal?", "Snedkerværksted/rytterstue??", "Høje-Taastrup Kommune"];
+        chartCreated.current.data.datasets = nextDataset.map((dataset, i) => {
+            if(!chartSetUp.current && prehiddenDatasets.includes(dataset.label)) {
+                return {...dataset, hidden: true}
+            }
+            if(!chartSetUp.current) {
+                return dataset;
+            }
+            console.log(chartCreated.current.isDatasetVisible(i))
+                                                           // Will return false as no sets has been given yet.
+                                                           // Therefore, only use isDatasetVisible af first set up
+            return {...dataset, hidden: !chartCreated.current.isDatasetVisible(i)};
+        })
+
         let yType = "linear"
         let yLegend = "watts"
         if (viewType == "accumulated") {
@@ -271,6 +290,7 @@ function MeterLineChart() {
         chartCreated.current.options.scales.y.title.text = yLegend;
         chartCreated.current.options.scales.y.type = yType;
 
+        chartSetUp.current = true;
         chartCreated.current.update();
     }
 
