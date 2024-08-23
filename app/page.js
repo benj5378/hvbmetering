@@ -165,14 +165,17 @@ function MeterLineChart() {
         if (diffDays < 2) {
             interval = { minutes: 15 };
         }
+        else if (diffDays < 2) {
+            interval = { minutes: 30 };
+        }
         else if (diffDays < 5) {
             interval = { hour: 1 };
         }
         else if (diffDays < 7) {
-            interval = { hour: 3 };
+            interval = { hour: 1, minutes: 30 };
         }
         else if (diffDays < 10) {
-            interval = { hour: 4 };
+            interval = { hour: 3 };
         }
         else if (diffDays < 25) {
             interval = { hour: 6 };
@@ -188,7 +191,7 @@ function MeterLineChart() {
         }
 
         // Get kWh
-        let values = {"5": [], "6": []};
+        let values = {"1": [], "2": [], "3": [], "4": [], "5": [], "6": []};
         for(let meter in values) {
             let previousDate = DateTime.fromSQL("2000-00-00 00:00:00");
             let previouskwh = 0;
@@ -231,6 +234,29 @@ function MeterLineChart() {
                 label: "Kiosk",
                 data: values["6"],
                 borderWidth: 1,
+            },
+            {
+                label: "Hedelands Veteranbane",
+                data: values["3"],
+                borderWidth: 1,
+            },
+            {
+                label: "Stald/ridehal?",
+                data: values["1"],
+                borderWidth: 1,
+                hidden: true,
+            },
+            {
+                label: "Snedkerværksted/rytterstue??",
+                data: values["2"],
+                borderWidth: 1,
+                hidden: true,
+            },
+            {
+                label: "Høje Taastrup Kommune",
+                data: values["4"],
+                borderWidth: 1,
+                hidden: true,
             },
         ];
         
@@ -303,7 +329,7 @@ function MeterLineChart() {
                 <input type="radio" className="btn-check" name="btnradio" id="btnradio1" autoComplete="off" checked={viewType == "averaged"} onChange={() => setViewType("averaged")} />
                 <label className="btn btn-outline-primary" htmlFor="btnradio1">Average</label>
                 
-                <input type="radio" className="btn-check" name="btnradio" id="btnradio2" autoComplete="off" checked={viewType == "log averaged"} onChange={() => {setViewType("log averaged"); console.log("here")}} />
+                <input type="radio" className="btn-check" name="btnradio" id="btnradio2" autoComplete="off" checked={viewType == "log averaged"} onChange={() => setViewType("log averaged")} />
                 <label className="btn btn-outline-primary" htmlFor="btnradio2">log(average)</label>
 
                 <input type="radio" className="btn-check" name="btnradio" id="btnradio3" autoComplete="off" checked={viewType == "accumulated"} onChange={() => setViewType("accumulated")} />
@@ -318,6 +344,7 @@ function MeterLineChart() {
                 <h2>Analysis of chosen period</h2>
                 <Analysis className="col-md" json={json} meter={5} name="Vognhal" />
                 <Analysis className="col-md" json={json} meter={6} name="Kiosk" />
+                <Analysis className="col-md" json={json} meter={3} name="Hedelands Veteranbane" />
             </div>
         </div>
     )
@@ -443,9 +470,11 @@ function LiveMeter({data, meter, title}) {
 function accumulateElements(elements) {
     let accumulated = 0;
     for (let element of elements) {
-        if (parseFloat(element["kwh"]) == 0) {
-            console.log("fuck")
-        }
+        // Why are there cases where kwh can be 0? If no power has been used?
+        // if (parseFloat(element["kwh"]) == 0) {
+        //     console.log("fuck")
+        //     console.log(element)
+        // }
         accumulated += parseFloat(element["kwh"]);
     }
     return accumulated;
